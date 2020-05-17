@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="msapplication-tap-highlight" content="no">
+  <meta name="viewport"
+    content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
+  <link rel="shortcut icon" href="minions.ico" type="image/x-icon">
+  <title>wangxk的github博客</title>
+</head>
+
+<body>
+  <div>
+    目录
+  </div>
+  <div id="listDiv"></div>
+  <div id="articleDiv"></div>
+  <script>
+    ajax({
+      url: "https://github.com/kingwangxk/first_project/tree/master",
+      type: 'GET',
+      data: {},
+      dataType: 'html',
+      timeout: 10000,
+      contentType: "application/html",
+      success: function (res) {
+        var reg = /<a class="js-navigation-open"[^>]+\bhref="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g
+        var listHTML = ''
+        res.replace(reg, function ($0, $1, $2) {
+          listHTML += `<p data-url="${$1}">${$2}</p>`
+        })
+        listDiv.innerHTML = listHTML
+        addEventListener(listDiv, "click", function (event) {
+          var _target = event.target
+          if (_target.nodeName == "P") {
+            var url = "https://github.com" + _target.dataset.url
+            ajax({
+              url: url,
+              type: 'GET',
+              data: {},
+              dataType: 'html',
+              timeout: 10000,
+              contentType: "application/html",
+              success: function (res) {
+                var reg = /<article[^>]*>([\s\S]*?)<\/article>/
+                res.replace(reg, function ($0, $1, $2) {
+                  articleDiv.innerHTML = $1
+                })
+              },
+              //异常处理
+              error: function (e) {
+                console.log(e);
+              }
+            })
+          }
+        })
+      },
+      //异常处理
+      error: function (e) {
+        console.log(e);
+      }
+    })
+
+    function ajax(options) {
+      options = options || {};  //调用函数时如果options没有指定，就给它赋值{},一个空的Object
+      options.type = (options.type || "GET").toUpperCase();/// 请求格式GET、POST，默认为GET
+      options.dataType = options.dataType || "json";    //响应数据格式，默认json
+
+      var params = formatParams(options.data);//options.data请求的数据
+
+      var xhr;
+
+      //考虑兼容性
+      if (window.XMLHttpRequest) {
+        xhr = new XMLHttpRequest();
+      } else if (window.ActiveObject) {//兼容IE6以下版本
+        xhr = new ActiveXobject('Microsoft.XMLHTTP');
+      }
+
+      //启动并发送一个请求
+      if (options.type == "GET") {
+        xhr.open("GET", options.url + "?" + params, true);
+        xhr.send(null);
+      } else if (options.type == "POST") {
+        xhr.open("post", options.url, true);
+
+        //设置表单提交时的内容类型
+        //Content-type数据请求的格式
+        xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhr.send(params);
+      }
+
+      //    设置有效时间
+      setTimeout(function () {
+        if (xhr.readySate != 4) {
+          xhr.abort();
+        }
+      }, options.timeout)
+
+      //    接收
+      //     options.success成功之后的回调函数  options.error失败后的回调函数
+      //xhr.responseText,xhr.responseXML  获得字符串形式的响应数据或者XML形式的响应数据
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4) {
+          var status = xhr.status;
+          if (status >= 200 && status < 300 || status == 304) {
+            options.success && options.success(xhr.responseText, xhr.responseXML);
+          } else {
+            options.error && options.error(status);
+          }
+        }
+      }
+    }
+
+    //格式化请求参数
+    function formatParams(data) {
+      var arr = [];
+      for (var name in data) {
+        arr.push(encodeURIComponent(name) + "=" + encodeURIComponent(data[name]));
+      }
+      // arr.push(("v=" + Math.random()).replace(".", ""));
+      return arr.join("&");
+    }
+
+    //为任意元素.绑定任意的事件, 任意的元素,事件的类型,事件处理函数
+    function addEventListener(element, type, fn) {
+      //判断浏览器是否支持这个方法
+      if (element.addEventListener) {
+        element.addEventListener(type, fn, false);
+      } else if (element.attachEvent) {
+        element.attachEvent("on" + type, fn);
+      } else {
+        element["on" + type] = fn;
+      }
+    }
+  </script>
+</body>
+
+</html>
